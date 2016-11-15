@@ -38,13 +38,5 @@ $ composer install wxpay/wxpay
 见 [tests/WXPayTest.php](tests/WXPayTest.php) 。
 
 
-## 测试
-
-```
-$ composer install
-$ php tests/WXPayApiTest.php
-$ php tests/WXPayUtilTest.php
-```
-
 ## License
 BSD
