@@ -8,6 +8,7 @@
         "sdk"
     ],
     "license": "BSD",
+    "minimum-stability" : "dev",
     "require": {
         "guzzlehttp/guzzle": "~6.0"
     },
