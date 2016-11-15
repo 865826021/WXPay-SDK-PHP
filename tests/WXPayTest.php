@@ -5,7 +5,7 @@ require __DIR__.'/Config.php';
 use WXPay\WXPay;
 
 /**
- * 测试统一下单
+ * 测试查询订单
  */
 function test_orderQuery() {
     $wxpay = new WXPay(
@@ -64,7 +64,7 @@ function test_downloadBill() {
         Config::WXPAY_KEYPEMPATH,
         6.0);
 
-    var_dump( $wxpay->downloadBill($reqData) );
+    var_dump( $wxpay->downloadBill($reqData, 10.1) );
 }
 
-// test_downloadBill();
+test_downloadBill();
