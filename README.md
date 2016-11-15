@@ -42,7 +42,6 @@ $ composer install wxpay/wxpay
 
 ```
 $ composer install
-$ ./vendor/bin/phpunit tests/phpunit/WXPayConstantsTest.php
 $ php tests/WXPayApiTest.php
 $ php tests/WXPayUtilTest.php
 ```
