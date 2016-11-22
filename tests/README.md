@@ -1,12 +1,12 @@
 ```
-$ cd ..
-$ composer install
-$ cd tests
+$ cp Config_example.php Config.php
+$ vim Config.php
 ```
 
 ```
-$ cp Config_example.php Config.php
-$ vim Config.php
+$ cd ..
+$ composer install
+$ cd tests
 ```
 
 

@@ -8,12 +8,12 @@ class WXPay
 {
     /**
      * WXPayApi constructor.
-     * @param $appId
-     * @param $mchId
-     * @param $key
-     * @param $certPemPath
-     * @param $keyPemPath
-     * @param $timeout float 单位秒，默认5.0
+     * @param string $appId 公众帐号ID
+     * @param string $mchId 商户号
+     * @param string $key API密钥
+     * @param string $certPemPath 商户pem格式证书文件路径
+     * @param string $keyPemPath 商户pem格式证书密钥文件路径
+     * @param float $timeout 单位秒，默认6.0
      */
     function __construct($appId, $mchId, $key, $certPemPath, $keyPemPath, $timeout=WXPayConstants::DEFAULT_TIMEOUT) {
         $this->appId = $appId;
@@ -26,7 +26,7 @@ class WXPay
 
     /**
      * 签名是否合法
-     * @param $data array
+     * @param array $data
      * @return bool
      */
     private function isSignatureValid($data) {
@@ -35,8 +35,8 @@ class WXPay
 
     /**
      * 处理去wxpay请求后的返回数据
-     * @param $xml string
-     * @return mixed array
+     * @param string $xml
+     * @return array
      * @throws \Exception
      */
     private function processResponseXml($xml) {
@@ -44,9 +44,6 @@ class WXPay
         $FAIL = "FAIL";
         $SUCCESS = "SUCCESS";
         $data = WXPayUtil::xml2array($xml);
-
-        // var_dump($data);
-        // echo "\n------\n";
 
         if (array_key_exists($RETURN_CODE, $data)) {
             $return_code = $data[$RETURN_CODE];
@@ -63,8 +60,6 @@ class WXPay
                 return $data;
             }
             else {
-                // echo "Invalid signature in XML.";
-                // echo "\n-----\n";
                 throw new \Exception("Invalid signature in XML.");
             }
         }
@@ -75,8 +70,8 @@ class WXPay
 
     /**
      * 生成Https请求的XML数据
-     * @param $data
-     * @return mixed string
+     * @param array $data
+     * @return string
      */
     private function makeHttpRequestBody($data) {
         $newData = array();
@@ -91,10 +86,10 @@ class WXPay
 
     /**
      * Https请求，不带证书
-     * @param $url string URL
-     * @param $reqData array 请求数据
-     * @param null $timeout 超时时间，秒
-     * @return mixed string 返回的xml数据
+     * @param string $url URL
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，秒
+     * @return string 返回的xml数据
      * @throws \Exception
      */
     private function requestWithoutCert($url, $reqData, $timeout=null) {
@@ -114,10 +109,10 @@ class WXPay
 
     /**
      * Https请求，带证书
-     * @param $url string
-     * @param $reqData array 请求数据
-     * @param null $timeout 超时时间，秒
-     * @return mixed string 返回的xml数据
+     * @param string $url URL
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，秒
+     * @return string 返回的xml数据
      * @throws \Exception
      */
     private function requestWithCert($url, $reqData, $timeout=null) {
@@ -141,9 +136,9 @@ class WXPay
 
     /**
      * 提交刷卡支付
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function microPay($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::MICROPAY_URL, $reqData, $timeout));
@@ -151,9 +146,9 @@ class WXPay
 
     /**
      * 统一下单
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function unifiedOrder($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::UNIFIEDORDER_URL, $reqData, $timeout));
@@ -161,9 +156,9 @@ class WXPay
 
     /**
      * 订单查询
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function orderQuery($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::ORDERQUERY_URL, $reqData, $timeout));
@@ -171,9 +166,9 @@ class WXPay
 
     /**
      * 撤销订单（用于刷卡支付）
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function reverse($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithCert(WXPayConstants::REVERSE_URL, $reqData, $timeout));
@@ -181,9 +176,9 @@ class WXPay
 
     /**
      * 关闭订单
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function closeOrder($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::CLOSEORDER_URL, $reqData, $timeout));
@@ -191,9 +186,9 @@ class WXPay
 
     /**
      * 申请退款
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function refund($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithCert(WXPayConstants::REFUND_URL, $reqData, $timeout));
@@ -201,9 +196,9 @@ class WXPay
 
     /**
      * 退款查询
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function refundQuery($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::REFUNDQUERY_URL, $reqData, $timeout));
@@ -211,9 +206,9 @@ class WXPay
 
     /**
      * 下载对账单
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据  注意，若下载成功，wxpay只会返回对账单数据，非XML。该函数对此做了封装，加上了return_code和return_msg
      * @throws \Exception
      */
     public function downloadBill($reqData, $timeout=null) {
@@ -236,9 +231,9 @@ class WXPay
 
     /**
      * 交易保障
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function report($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::REPORT_URL, $reqData, $timeout));
@@ -246,9 +241,9 @@ class WXPay
 
     /**
      * 转换短链接
-     * @param $reqData array
-     * @param null $timeout
-     * @return mixed array
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function shortUrl($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::SHORTURL_URL, $reqData, $timeout));
@@ -256,9 +251,9 @@ class WXPay
 
     /**
      * 授权码查询OPENID接口
-     * @param $reqData
-     * @param null $timeout
-     * @return mixed
+     * @param array $reqData 请求数据
+     * @param null|float $timeout 超时时间，单位是秒
+     * @return array wxpay返回数据
      */
     public function authCodeToOpenid($reqData, $timeout=null) {
         return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::AUTHCODETOOPENID_URL, $reqData, $timeout));

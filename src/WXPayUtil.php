@@ -6,8 +6,8 @@ class WXPayUtil
 {
     /**
      * 将array转换为XML格式的字符串
-     * @param $data array
-     * @return mixed string
+     * @param array $data
+     * @return string
      * @throws \Exception
      */
     public static function array2xml($data) {
@@ -26,8 +26,8 @@ class WXPayUtil
     /**
      * 将XML格式字符串转换为array
      * 参考： http://php.net/manual/zh/book.simplexml.php
-     * @param $str string XML格式字符串
-     * @return mixed array
+     * @param string $str XML格式字符串
+     * @return array
      * @throws \Exception
      */
     public static function xml2array($str) {
@@ -88,8 +88,8 @@ class WXPayUtil
 
     /**
      * 验证签名是否合法
-     * @param $data array
-     * @param $wxpayKey string
+     * @param array $data
+     * @param string $wxpayKey API密钥
      * @return bool
      */
     public static function isSignatureValid($data, $wxpayKey) {
@@ -113,9 +113,9 @@ class WXPayUtil
 
     /**
      * 生成含有签名数据的XML格式字符串
-     * @param $data array
-     * @param $wxpayKey string
-     * @return mixed string
+     * @param array $data
+     * @param string $wxpayKey
+     * @return string
      */
     public static function generateSignedXml($data, $wxpayKey) {
         $newData = array();
