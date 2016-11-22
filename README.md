@@ -37,6 +37,8 @@ $ composer require "wxpay/wxpay:0.0.2" -vvv
 
 见 [tests/WXPayTest.php](tests/WXPayTest.php) 。
 
+## 兼容性
+在 PHP 5.6.21 中测试通过。
 
 ## License
 BSD
