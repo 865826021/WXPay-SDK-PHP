@@ -30,7 +30,7 @@
 ## 安装
 
 ```
-$ composer require "wxpay/wxpay:0.0.1" -vvv
+$ composer require "wxpay/wxpay:0.0.2" -vvv
 ```
 
 ## 示例
