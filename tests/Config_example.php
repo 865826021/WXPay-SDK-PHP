@@ -1,11 +1,12 @@
 <?php
 /**
- * 拷贝到Config.php，WXPayTest.php 会用到
+ * 拷贝到 Config.php， WXPayTest.php 会用到
  * cp Config_example.php Config.php
+ * 并将类名修改为 Config
  */
 
 
-class Config
+class Config_example
 {
     const WXPAY_APPID = 'wx888888888';
     const WXPAY_MCHID = '22222222';

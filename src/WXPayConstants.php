@@ -5,7 +5,7 @@ namespace WXPay;
 class WXPayConstants
 {
     const SIGN = "sign";
-    const DEFAULT_TIMEOUT  = 6.0; // ms
+    const DEFAULT_TIMEOUT_MS  = 6000.0; // ms
     const MICROPAY_URL     = 'https://api.mch.weixin.qq.com/pay/micropay';
     const UNIFIEDORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
     const ORDERQUERY_URL   = 'https://api.mch.weixin.qq.com/pay/orderquery';

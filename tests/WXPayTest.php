@@ -14,7 +14,7 @@ function test_orderQuery() {
         Config::WXPAY_KEY,
         Config::WXPAY_CERTPEMPATH,
         Config::WXPAY_KEYPEMPATH,
-        6.0);
+        6000);  // 网络超时时间，单位是毫秒
 
     var_dump( $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763')) );
 
@@ -39,7 +39,7 @@ function test_refund() {
         Config::WXPAY_KEY,
         Config::WXPAY_CERTPEMPATH,
         Config::WXPAY_KEYPEMPATH,
-        6.0);
+        6000); // 网络超时时间，单位是毫秒
 
     var_dump($wxpay->refund($reqData));
 }
@@ -62,9 +62,9 @@ function test_downloadBill() {
         Config::WXPAY_KEY,
         Config::WXPAY_CERTPEMPATH,
         Config::WXPAY_KEYPEMPATH,
-        6.0);
+        6000);  // 网络超时时间，单位是毫秒
 
-    var_dump( $wxpay->downloadBill($reqData, 10.1) );
+    var_dump( $wxpay->downloadBill($reqData, 10000) );  // 第 2 个参数是超时时间，单位毫秒。这里设置了10000，6000就用不到了。
 }
 
 test_downloadBill();

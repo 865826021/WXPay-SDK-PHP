@@ -13,9 +13,9 @@ class WXPay
      * @param string $key API密钥
      * @param string $certPemPath 商户pem格式证书文件路径
      * @param string $keyPemPath 商户pem格式证书密钥文件路径
-     * @param float $timeout 单位秒，默认6.0
+     * @param float $timeout 网络超时时间，单位毫秒，默认6000
      */
-    function __construct($appId, $mchId, $key, $certPemPath, $keyPemPath, $timeout=WXPayConstants::DEFAULT_TIMEOUT) {
+    function __construct($appId, $mchId, $key, $certPemPath, $keyPemPath, $timeout=WXPayConstants::DEFAULT_TIMEOUT_MS) {
         $this->appId = $appId;
         $this->mchId = $mchId;
         $this->key = $key;
@@ -88,7 +88,7 @@ class WXPay
      * Https请求，不带证书
      * @param string $url URL
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return string 返回的xml数据
      * @throws \Exception
      */
@@ -96,7 +96,7 @@ class WXPay
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
-        $client = new HttpClient(['timeout'  => $timeout]);
+        $client = new HttpClient(['timeout'  => ((float)$timeout)/1000.0]);
         $reqXml = $this->makeHttpRequestBody($reqData);
         $resp = $client->post($url, ['body' => $reqXml]);
         if ($resp->getStatusCode() == 200) {
@@ -111,7 +111,7 @@ class WXPay
      * Https请求，带证书
      * @param string $url URL
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return string 返回的xml数据
      * @throws \Exception
      */
@@ -119,7 +119,7 @@ class WXPay
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
-        $client = new HttpClient(['timeout'  => $timeout]);
+        $client = new HttpClient(['timeout'  => ((float)$timeout)/1000.0]);
         $reqXml = $this->makeHttpRequestBody($reqData);
         $resp = $client->post($url, array(
             'body' => $reqXml,
@@ -137,7 +137,7 @@ class WXPay
     /**
      * 提交刷卡支付
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function microPay($reqData, $timeout=null) {
@@ -147,7 +147,7 @@ class WXPay
     /**
      * 统一下单
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function unifiedOrder($reqData, $timeout=null) {
@@ -157,7 +157,7 @@ class WXPay
     /**
      * 订单查询
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function orderQuery($reqData, $timeout=null) {
@@ -167,7 +167,7 @@ class WXPay
     /**
      * 撤销订单（用于刷卡支付）
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function reverse($reqData, $timeout=null) {
@@ -177,7 +177,7 @@ class WXPay
     /**
      * 关闭订单
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function closeOrder($reqData, $timeout=null) {
@@ -187,7 +187,7 @@ class WXPay
     /**
      * 申请退款
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function refund($reqData, $timeout=null) {
@@ -197,7 +197,7 @@ class WXPay
     /**
      * 退款查询
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function refundQuery($reqData, $timeout=null) {
@@ -207,7 +207,7 @@ class WXPay
     /**
      * 下载对账单
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据  注意，若下载成功，wxpay只会返回对账单数据，非XML。该函数对此做了封装，加上了return_code和return_msg
      * @throws \Exception
      */
@@ -232,7 +232,7 @@ class WXPay
     /**
      * 交易保障
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function report($reqData, $timeout=null) {
@@ -242,7 +242,7 @@ class WXPay
     /**
      * 转换短链接
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function shortUrl($reqData, $timeout=null) {
@@ -252,7 +252,7 @@ class WXPay
     /**
      * 授权码查询OPENID接口
      * @param array $reqData 请求数据
-     * @param null|float $timeout 超时时间，单位是秒
+     * @param null|float $timeout 网络超时时间，单位是毫秒
      * @return array wxpay返回数据
      */
     public function authCodeToOpenid($reqData, $timeout=null) {
