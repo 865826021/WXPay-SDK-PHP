@@ -29,7 +29,7 @@ class WXPay
      * @param array $data
      * @return bool
      */
-    private function isSignatureValid($data) {
+    public function isSignatureValid($data) {
         return WXPayUtil::isSignatureValid($data, $this->key);
     }
 
@@ -39,7 +39,7 @@ class WXPay
      * @return array
      * @throws \Exception
      */
-    private function processResponseXml($xml) {
+    public function processResponseXml($xml) {
         $RETURN_CODE = "return_code";
         $FAIL = "FAIL";
         $SUCCESS = "SUCCESS";
@@ -69,11 +69,11 @@ class WXPay
     }
 
     /**
-     * 生成Https请求的XML数据
+     * 生成 Https 请求的XML数据
      * @param array $data
      * @return string
      */
-    private function makeHttpRequestBody($data) {
+    public function makeHttpRequestBody($data) {
         $newData = array();
         foreach ($data as $k => $v) {
             $newData[$k] = $v;
@@ -92,7 +92,7 @@ class WXPay
      * @return string 返回的xml数据
      * @throws \Exception
      */
-    private function requestWithoutCert($url, $reqData, $timeout=null) {
+    public function requestWithoutCert($url, $reqData, $timeout=null) {
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
@@ -115,7 +115,7 @@ class WXPay
      * @return string 返回的xml数据
      * @throws \Exception
      */
-    private function requestWithCert($url, $reqData, $timeout=null) {
+    public function requestWithCert($url, $reqData, $timeout=null) {
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
