@@ -37,6 +37,8 @@ php必须启用curl，并在php.ini中配置`curl.cainfo`的值`rootca.pem`的�
 ```php
 require __DIR__.'/vendor/autoload.php';
 use WXPay\WXPay;
+use WXPay\WXPayConstants;
+use WXPay\WXPayUtil;
 
 $wxpay = new WXPay(
         'wx888888888',  // appid
@@ -58,13 +60,13 @@ $wxpay = new WXPay(
         '/path/to/apiclient_cert.pem',
         '/path/to/apiclient_key.pem',
         6000,  // 超时时间，毫秒
-        \WXPay\WXPayConstants::SIGN_TYPE_HMACSHA256);  
+        WXPayConstants::SIGN_TYPE_HMACSHA256);  
 $resp = $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763'));
 var_dump($resp);
 ```
 
 查询订单（沙箱环境，使用MD5做签名）：
-```
+```php
 $useSandbox = true;
 
 $wxpay = new WXPay(
@@ -74,7 +76,7 @@ $wxpay = new WXPay(
        '/path/to/apiclient_cert.pem',
        '/path/to/apiclient_key.pem',
        6000,  // 超时时间，毫秒
-       \WXPay\WXPayConstants::SIGN_TYPE_MD5,
+       WXPayConstants::SIGN_TYPE_MD5,
        $useSandbox);
 
 var_dump( $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763')) );
@@ -114,7 +116,7 @@ $xml = "<xml>
     ......
     <sign>9A0A8659F005D6984697E2CA0A9CF3B7</sign> 
     </xml>";
-$data = \WXPay\WXPayUtil::xml2array($xml);
+$data = WXPayUtil::xml2array($xml);
 // $data必须有sign字段，也就是return_code必须为SUCCESS。否则返回false
 var_dump($wxpay->isPayResultNotifySignatureValid($data));  // 布尔类型，标识签名是否正确
 ```
