@@ -13,24 +13,19 @@ class WXPay
      * @param string $key API密钥
      * @param string $certPemPath 商户pem格式证书文件路径
      * @param string $keyPemPath 商户pem格式证书密钥文件路径
-     * @param float $timeout 网络超时时间，单位毫秒，默认6000
+     * @param float $timeout 网络超时时间，单位毫秒，默认8000ms
+     * @param string $signType 使用的签名算法，默认为MD5
+     * @param boolean $useSandbox 使用沙箱环境，默认为false
      */
-    function __construct($appId, $mchId, $key, $certPemPath, $keyPemPath, $timeout=WXPayConstants::DEFAULT_TIMEOUT_MS) {
+    function __construct($appId, $mchId, $key, $certPemPath, $keyPemPath, $timeout=WXPayConstants::DEFAULT_TIMEOUT_MS, $signType=WXPayConstants::SIGN_TYPE_MD5, $useSandbox=false) {
         $this->appId = $appId;
         $this->mchId = $mchId;
         $this->key = $key;
         $this->certPemPath = $certPemPath;
         $this->keyPemPath = $keyPemPath;
         $this->timeout = $timeout;
-    }
-
-    /**
-     * 签名是否合法
-     * @param array $data
-     * @return bool
-     */
-    public function isSignatureValid($data) {
-        return WXPayUtil::isSignatureValid($data, $this->key);
+        $this->signType = $signType;
+        $this->useSandbox = $useSandbox;
     }
 
     /**
@@ -49,18 +44,18 @@ class WXPay
             $return_code = $data[$RETURN_CODE];
         }
         else {
-            throw new \Exception("Invalid XML. There is no `return_code`");
+            throw new \Exception("Invalid XML. There is no `return_code`. ${xml}");
         }
 
         if ($return_code === $FAIL) {
             return $data;
         }
         elseif ($return_code === $SUCCESS) {
-            if ($this->isSignatureValid($data)) {
+            if ($this->isResponseSignatureValid($data)) {
                 return $data;
             }
             else {
-                throw new \Exception("Invalid signature in XML.");
+                throw new \Exception("Invalid signature in XML. ${xml}");
             }
         }
         else {
@@ -69,19 +64,69 @@ class WXPay
     }
 
     /**
-     * 生成 Https 请求的XML数据
+     * 向关联数据中添加 appid、mch_id、nonce_str、sign_type、sign 字段
      * @param array $data
-     * @return string
+     * @return array
      */
-    public function makeHttpRequestBody($data) {
+    public function fillRequestData($data) {
+        // clone一份新数据
         $newData = array();
         foreach ($data as $k => $v) {
             $newData[$k] = $v;
         }
+        // 填充
         $newData['appid'] = $this->appId;
         $newData['mch_id'] = $this->mchId;
         $newData['nonce_str'] = WXPayUtil::generateNonceStr();
-        return WXPayUtil::generateSignedXml($newData, $this->key);
+        $newData['sign_type'] = $this->signType;
+        $sign = WXPayUtil::generateSignature($newData, $this->key, $this->signType);
+        $newData['sign'] = $sign;
+        return $newData;
+    }
+
+    /**
+     * 判断 $data 的 sign 是否有效，必须包含sign字段，否则返回false。
+     * @param array $data
+     * @return bool
+     */
+    public function isResponseSignatureValid($data) {
+        return WXPayUtil::isSignatureValid($data, $this->key, $this->signType);
+    }
+
+    /**
+     * 判断支付结果通知中的sign是否有效。必须有sign字段
+     *
+     * @param array $data
+     * @return bool
+     * @throws \Exception
+     */
+    public function isPayResultNotifySignatureValid($data) {
+        if ( !array_key_exists(WXPayConstants::FIELD_SIGN_TYPE, $data) ) {
+            $signType = WXPayConstants::SIGN_TYPE_MD5;
+        }
+        else {
+            $signTypeInData = $data['sign_type'];
+        }
+
+        if (!isset($signTypeInData) || $signTypeInData == null) {
+            $signType = WXPayConstants::SIGN_TYPE_MD5;
+        }
+        else {
+            $signTypeInData = trim($signTypeInData);
+            if (strlen($signTypeInData) == 0) {
+                $signType = WXPayConstants::SIGN_TYPE_MD5;
+            }
+            elseif (WXPayConstants::SIGN_TYPE_MD5 == $signTypeInData) {
+                $signType = WXPayConstants::SIGN_TYPE_MD5;
+            }
+            elseif (WXPayConstants::SIGN_TYPE_HMACSHA256 == $signTypeInData) {
+                $signType = WXPayConstants::SIGN_TYPE_HMACSHA256;
+            }
+            else {
+                throw new \Exception("Unsupported sign_type: ${signType}");
+            }
+        }
+        return WXPayUtil::isSignatureValid($data, $this->key, $signType);
     }
 
     /**
@@ -96,14 +141,26 @@ class WXPay
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
-        $client = new HttpClient(['timeout'  => ((float)$timeout)/1000.0]);
-        $reqXml = $this->makeHttpRequestBody($reqData);
-        $resp = $client->post($url, ['body' => $reqXml]);
-        if ($resp->getStatusCode() == 200) {
-            return $resp->getBody()->getContents();
-        }
-        else {
-            throw new \Exception('HTTP Response status code is not 200');
+        $reqXml = WXPayUtil::array2xml($reqData);
+        $ch = curl_init();
+        //设置超时
+        curl_setopt($ch, CURLOPT_TIMEOUT, ((float)$timeout)/1000.0);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,TRUE);
+        curl_setopt($ch,CURLOPT_SSL_VERIFYHOST,2);  //严格校验
+        curl_setopt($ch, CURLOPT_HEADER, FALSE);    //设置header
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_POST, TRUE);   // POST请求
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $reqXml);
+        $output = curl_exec($ch);
+        if($output){
+            curl_close($ch);
+            return $output;
+        } else {
+            $error = curl_errno($ch);
+            curl_close($ch);
+            throw new \Exception("curl出错，错误码: ${error}");
         }
     }
 
@@ -119,18 +176,33 @@ class WXPay
         if ($timeout == null) {
             $timeout = $this->timeout;
         }
-        $client = new HttpClient(['timeout'  => ((float)$timeout)/1000.0]);
-        $reqXml = $this->makeHttpRequestBody($reqData);
-        $resp = $client->post($url, array(
-            'body' => $reqXml,
-            'cert' => $this->certPemPath,
-            'ssl_key' => $this->keyPemPath,
-        ));
-        if ($resp->getStatusCode() == 200) {
-            return $resp->getBody()->getContents();
-        }
-        else {
-            throw new \Exception('HTTP Response status code is not 200');
+        $reqXml = WXPayUtil::array2xml($reqData);
+        $ch = curl_init();
+        //设置超时
+        curl_setopt($ch, CURLOPT_TIMEOUT, ((float)$timeout)/1000.0);
+
+        curl_setopt($ch,CURLOPT_URL, $url);
+        curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,TRUE);
+        curl_setopt($ch,CURLOPT_SSL_VERIFYHOST,2);  //严格校验
+        curl_setopt($ch, CURLOPT_HEADER, FALSE);    //设置header
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+
+        // 设置证书
+        curl_setopt($ch,CURLOPT_SSLCERTTYPE,'PEM');
+        curl_setopt($ch,CURLOPT_SSLCERT, $this->certPemPath);
+        curl_setopt($ch,CURLOPT_SSLKEYTYPE,'PEM');
+        curl_setopt($ch,CURLOPT_SSLKEY, $this->keyPemPath);
+
+        curl_setopt($ch, CURLOPT_POST, TRUE);  // POST请求
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $reqXml);
+        $output = curl_exec($ch);
+        if($output){
+            curl_close($ch);
+            return $output;
+        } else {
+            $error = curl_errno($ch);
+            curl_close($ch);
+            throw new \Exception("curl出错，错误码: ${error}");
         }
     }
 
@@ -141,7 +213,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function microPay($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::MICROPAY_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_MICROPAY_URL;
+        }
+        else {
+            $url = WXPayConstants::MICROPAY_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -151,7 +229,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function unifiedOrder($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::UNIFIEDORDER_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_UNIFIEDORDER_URL;
+        }
+        else {
+            $url = WXPayConstants::UNIFIEDORDER_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -161,7 +245,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function orderQuery($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::ORDERQUERY_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_ORDERQUERY_URL;
+        }
+        else {
+            $url = WXPayConstants::ORDERQUERY_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -171,7 +261,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function reverse($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithCert(WXPayConstants::REVERSE_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_REVERSE_URL;
+        }
+        else {
+            $url = WXPayConstants::REVERSE_URL;
+        }
+        return $this->processResponseXml($this->requestWithCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -181,7 +277,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function closeOrder($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::CLOSEORDER_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_CLOSEORDER_URL;
+        }
+        else {
+            $url = WXPayConstants::CLOSEORDER_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -191,7 +293,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function refund($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithCert(WXPayConstants::REFUND_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_REFUND_URL;
+        }
+        else {
+            $url = WXPayConstants::REFUND_URL;
+        }
+        return $this->processResponseXml($this->requestWithCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -201,7 +309,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function refundQuery($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::REFUNDQUERY_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_REFUNDQUERY_URL;
+        }
+        else {
+            $url = WXPayConstants::REFUNDQUERY_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -212,7 +326,13 @@ class WXPay
      * @throws \Exception
      */
     public function downloadBill($reqData, $timeout=null) {
-        $respContent = $this->requestWithoutCert(WXPayConstants::DOWNLOADBILL_URL, $reqData, $timeout);
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_DOWNLOADBILL_URL;
+        }
+        else {
+            $url = WXPayConstants::DOWNLOADBILL_URL;
+        }
+        $respContent = $this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout);
         $respContent = trim($respContent);
         if (strlen($respContent) === 0) {
             throw new \Exception('HTTP response is empty!');
@@ -236,7 +356,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function report($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::REPORT_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_REPORT_URL;
+        }
+        else {
+            $url = WXPayConstants::REPORT_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -246,7 +372,13 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function shortUrl($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::SHORTURL_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_SHORTURL_URL;
+        }
+        else {
+            $url = WXPayConstants::SHORTURL_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 
     /**
@@ -256,6 +388,12 @@ class WXPay
      * @return array wxpay返回数据
      */
     public function authCodeToOpenid($reqData, $timeout=null) {
-        return $this->processResponseXml($this->requestWithoutCert(WXPayConstants::AUTHCODETOOPENID_URL, $reqData, $timeout));
+        if ($this->useSandbox) {
+            $url = WXPayConstants::SANDBOX_AUTHCODETOOPENID_URL;
+        }
+        else {
+            $url = WXPayConstants::AUTHCODETOOPENID_URL;
+        }
+        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
     }
 }

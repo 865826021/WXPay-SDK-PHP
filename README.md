@@ -19,23 +19,108 @@
 |shortUrl|转换短链接|
 |authCodeToOpenid|授权码查询openid|
 
-参数为关联数组，返回类型也是关联数组。
-方法内部会将参数会转换成含有`appid`、`mch_id`、`nonce_str`和`sign`的XML；
-通过HTTPS请求得到返回数据后会对其做必要的处理（例如验证签名，签名错误则抛出异常）。
-
-对于downloadBill，无论是否成功都返回关联数组，且都含有`return_code`和`return_msg`。
-若成功，其中`return_code`为`SUCCESS`，另外`data`对应对账单数据。
-
+* 参数为关联数组，返回类型也是关联数组。
+* 方法内部会将参数会转换成含有`appid、mch_id`、`nonce_str`、`sign_type`和`sign`的XML；
+* 默认使用MD5进行签名；
+* 通过HTTPS请求得到返回数据后会对其做必要的处理（例如验证签名，签名错误则抛出异常）。
+* 对于downloadBill，无论是否成功都返回Map，且都含有`return_code`和`return_msg`。若成功，其中`return_code`为SUCCESS，`data`对应对账单数据。暂不支持下载压缩格式的对账单。
 
 ## 安装
 
 ```
-$ composer require "wxpay/wxpay:0.0.3" -vvv
+$ composer require "wxpay/wxpay:0.0.4" -vvv
 ```
+php必须启用curl，并在php.ini中配置`curl.cainfo`的值`rootca.pem`的绝对路径。
 
 ## 示例
+查询订单（使用MD5做签名）：
+```php
+require __DIR__.'/vendor/autoload.php';
+use WXPay\WXPay;
 
-见 [tests/WXPayTest.php](tests/WXPayTest.php) 。
+$wxpay = new WXPay(
+        'wx888888888',  // appid
+        '22222222',     // mch id
+        '123456781234567812345678',  // key
+        '/path/to/apiclient_cert.pem',
+        '/path/to/apiclient_key.pem',
+        6000);  // 超时时间，毫秒
+$resp = $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763'));
+var_dump($resp);
+```
+
+查询订单（使用HMAC-SHA256做签名）：
+```php
+$wxpay = new WXPay(
+        'wx888888888',  // appid
+        '22222222',     // mch id
+        '123456781234567812345678',  // key
+        '/path/to/apiclient_cert.pem',
+        '/path/to/apiclient_key.pem',
+        6000,  // 超时时间，毫秒
+        \WXPay\WXPayConstants::SIGN_TYPE_HMACSHA256);  
+$resp = $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763'));
+var_dump($resp);
+```
+
+查询订单（沙箱环境，使用MD5做签名）：
+```
+$useSandbox = true;
+
+$wxpay = new WXPay(
+       'wx888888888',  // appid
+       '22222222',     // mch id
+       '123456781234567812345678',  // 沙箱环境key
+       '/path/to/apiclient_cert.pem',
+       '/path/to/apiclient_key.pem',
+       6000,  // 超时时间，毫秒
+       \WXPay\WXPayConstants::SIGN_TYPE_MD5,
+       $useSandbox);
+
+var_dump( $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763')) );
+```
+
+若需要生成请求的XML数据，可以这样：
+```php
+$data = array(
+    'bill_date' => '20140603',
+    'bill_type' => 'ALL',
+    'tar_type' => 'GZIP'
+);
+$wxpay = new WXPay(
+        'wx888888888',  // appid
+        '22222222',     // mch id
+        '123456781234567812345678',  // key
+        '/path/to/apiclient_cert.pem',
+        '/path/to/apiclient_key.pem',
+        6000);  // 超时时间，毫秒
+$data = $wxpay->fillRequestData($data); // 会添加appid、mch_id、sign_type、sign、nonce_str
+var_dump($data);
+echo "\n";
+echo \WXPay\WXPayUtil::array2xml($data);
+```
+
+收到支付结果通知时，需要验证签名，可以这样做：
+```php
+$wxpay = new WXPay(
+    'wx888888888',  // appid
+    '22222222',     // mch id
+    "123456781234567812345678",  // key
+    '/path/to/apiclient_cert.pem',
+    '/path/to/apiclient_key.pem',
+    6000);
+
+$xml = "<xml> 
+    ......
+    <sign>9A0A8659F005D6984697E2CA0A9CF3B7</sign> 
+    </xml>";
+$data = \WXPay\WXPayUtil::xml2array($xml);
+// $data必须有sign字段，也就是return_code必须为SUCCESS。否则返回false
+var_dump($wxpay->isPayResultNotifySignatureValid($data));  // 布尔类型，标识签名是否正确
+```
+
+
+更多见 [tests/WXPayTest.php](tests/WXPayTest.php) 。
 
 ## 兼容性
 在 PHP 5.6.21 中测试通过。

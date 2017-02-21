@@ -57,19 +57,20 @@ class WXPayUtil
 
 
     /**
-     * 生成签名
-     * @param $data array
-     * @param $wxpayKey
+     * 生成签名。注意$data中若有sign_type字段，必须和参数$signType的值一致。这里不做检查。
+     * @param array $data
+     * @param string $wxpayKey API密钥
+     * @param string $signType
      * @return string
      * @throws \Exception
      */
-    public static function generateSignature($data, $wxpayKey) {
+    public static function generateSignature($data, $wxpayKey, $signType=WXPayConstants::SIGN_TYPE_MD5) {
         $combineStr = '';
         $keys = array_keys($data);
         asort($keys);  // 排序
         foreach($keys as $k) {
             $v = $data[$k];
-            if ($k == WXPayConstants::SIGN) {
+            if ($k == WXPayConstants::FIELD_SIGN) {
                 continue;
             }
             elseif ((is_string($v) && strlen($v) > 0) || is_numeric($v) ) {
@@ -79,26 +80,35 @@ class WXPayUtil
                 continue;
             }
             else {
-                throw new \Exception('Invalid data, cannot generate signature');
+                throw new \Exception('Invalid data, cannot generate signature: ' . json_encode($data));
             }
         }
         $combineStr = "${combineStr}key=${wxpayKey}";
-        return strtoupper(md5($combineStr));
+        if ($signType === WXPayConstants::SIGN_TYPE_MD5) {
+            return self::MD5($combineStr);
+        }
+        elseif ($signType === WXPayConstants::SIGN_TYPE_HMACSHA256) {
+            return self::HMACSHA256($combineStr, $wxpayKey);
+        }
+        else {
+            throw new \Exception('Invalid sign_type: ' . $signType);
+        }
     }
 
     /**
      * 验证签名是否合法
      * @param array $data
      * @param string $wxpayKey API密钥
+     * @param string $signType
      * @return bool
      */
-    public static function isSignatureValid($data, $wxpayKey) {
-        if ( !array_key_exists(WXPayConstants::SIGN, $data) ) {
+    public static function isSignatureValid($data, $wxpayKey, $signType=WXPayConstants::SIGN_TYPE_MD5) {
+        if ( !array_key_exists(WXPayConstants::FIELD_SIGN, $data) ) {
             return false;
         }
-        $sign = $data[WXPayConstants::SIGN];
+        $sign = $data[WXPayConstants::FIELD_SIGN];
         try {
-            $generatedSign = WXPayUtil::generateSignature($data, $wxpayKey);
+            $generatedSign = WXPayUtil::generateSignature($data, $wxpayKey, $signType);
             // echo "签名: ${generatedSign} \n";
             if ($sign === $generatedSign) {
                 return true;
@@ -114,16 +124,18 @@ class WXPayUtil
     /**
      * 生成含有签名数据的XML格式字符串
      * @param array $data
-     * @param string $wxpayKey
+     * @param string $wxpayKey API密钥
+     * @param string $signType
      * @return string
      */
-    public static function generateSignedXml($data, $wxpayKey) {
+    public static function generateSignedXml($data, $wxpayKey, $signType=WXPayConstants::SIGN_TYPE_MD5) {
+        // clone一份
         $newData = array();
         foreach ($data as $k => $v) {
             $newData[$k] = $v;
         }
-        $sign = WXPayUtil::generateSignature($data, $wxpayKey);
-        $newData[WXPayConstants::SIGN] = $sign;
+        $sign = WXPayUtil::generateSignature($data, $wxpayKey, $signType);
+        $newData[WXPayConstants::FIELD_SIGN] = $sign;
         return WXPayUtil::array2xml($newData);
     }
 
@@ -142,4 +154,22 @@ class WXPayUtil
         );
     }
 
+    /**
+     * 获取 MD5 结果
+     * @param string $data
+     * @return string
+     */
+    public static function MD5($data) {
+        return strtoupper(md5($data));
+    }
+
+    /**
+     * 获取 HMAC-SHA256 签名结果
+     * @param string $data
+     * @param string $wxpayKey
+     * @return string
+     */
+    public static function HMACSHA256($data, $wxpayKey) {
+        return strtoupper(hash_hmac('sha256', $data, $wxpayKey));
+    }
 }

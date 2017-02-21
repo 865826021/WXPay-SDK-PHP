@@ -32,7 +32,7 @@ function test_xml2array()
     var_dump($xmlArray);
 }
 
-//test_xml2array();
+// test_xml2array();
 
 function test_array2xml()
 {
@@ -75,7 +75,7 @@ function test_array2xml()
     echo WXPayUtil::array2xml($data);
 }
 
-//test_array2xml();
+// test_array2xml();
 
 function test_generateSignature()
 {
@@ -93,9 +93,12 @@ function test_generateSignature()
         'sign' => '9A0A8659F005D6984697E2CA0A9CF3B7'
     );
     echo WXPayUtil::generateSignature($data, '192006250b4c09247ec02edce69f6a2d');
+    echo "\n";
+    echo WXPayUtil::generateSignature($data, '192006250b4c09247ec02edce69f6a2d', \WXPay\WXPayConstants::SIGN_TYPE_HMACSHA256);
 }
 
-//test_generateSignature();
+// test_generateSignature();
+
 function test_generateSignedXml() {
     $data = array(
         'appid' => 'wxd930ea5d5a258f4f',
@@ -108,7 +111,7 @@ function test_generateSignedXml() {
     echo WXPayUtil::generateSignedXml($data, '192006250b4c09247ec02edce69f6a2d');
 }
 
-//test_generateSignedXml();
+// test_generateSignedXml();
 
 function test_generateNonceStr() {
     echo WXPayUtil::generateNonceStr() . "\n";
@@ -117,4 +120,4 @@ function test_generateNonceStr() {
     echo WXPayUtil::generateNonceStr() . "\n";
 }
 
-test_generateNonceStr();
+// test_generateNonceStr();

@@ -4,8 +4,17 @@ namespace WXPay;
 
 class WXPayConstants
 {
-    const SIGN = "sign";
-    const DEFAULT_TIMEOUT_MS  = 6000.0; // ms
+    const FAIL     = "FAIL";
+    const SUCCESS  = "SUCCESS";
+
+    const SIGN_TYPE_MD5 = "MD5";
+    const SIGN_TYPE_HMACSHA256 = "HMAC-SHA256";
+
+    const FIELD_SIGN = "sign";
+    const FIELD_SIGN_TYPE = "sign_type";
+
+    const DEFAULT_TIMEOUT_MS  = 8000.0; // ms
+
     const MICROPAY_URL     = 'https://api.mch.weixin.qq.com/pay/micropay';
     const UNIFIEDORDER_URL = 'https://api.mch.weixin.qq.com/pay/unifiedorder';
     const ORDERQUERY_URL   = 'https://api.mch.weixin.qq.com/pay/orderquery';
@@ -17,4 +26,17 @@ class WXPayConstants
     const REPORT_URL       = 'https://api.mch.weixin.qq.com/pay/report';
     const SHORTURL_URL     = 'https://api.mch.weixin.qq.com/tools/shorturl';
     const AUTHCODETOOPENID_URL = 'https://api.mch.weixin.qq.com/tools/authcodetoopenid';
+
+    // sandbox
+    const SANDBOX_MICROPAY_URL     = "https://api.mch.weixin.qq.com/sandboxnew/pay/micropay";
+    const SANDBOX_UNIFIEDORDER_URL = "https://api.mch.weixin.qq.com/sandboxnew/pay/unifiedorder";
+    const SANDBOX_ORDERQUERY_URL   = "https://api.mch.weixin.qq.com/sandboxnew/pay/orderquery";
+    const SANDBOX_REVERSE_URL      = "https://api.mch.weixin.qq.com/sandboxnew/secapi/pay/reverse";
+    const SANDBOX_CLOSEORDER_URL   = "https://api.mch.weixin.qq.com/sandboxnew/pay/closeorder";
+    const SANDBOX_REFUND_URL       = "https://api.mch.weixin.qq.com/sandboxnew/secapi/pay/refund";
+    const SANDBOX_REFUNDQUERY_URL  = "https://api.mch.weixin.qq.com/sandboxnew/pay/refundquery";
+    const SANDBOX_DOWNLOADBILL_URL = "https://api.mch.weixin.qq.com/sandboxnew/pay/downloadbill";
+    const SANDBOX_REPORT_URL       = "https://api.mch.weixin.qq.com/sandboxnew/pay/report";
+    const SANDBOX_SHORTURL_URL     = "https://api.mch.weixin.qq.com/sandboxnew/tools/shorturl";
+    const SANDBOX_AUTHCODETOOPENID_URL = "https://api.mch.weixin.qq.com/sandboxnew/tools/authcodetoopenid";
 }
