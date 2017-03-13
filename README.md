@@ -28,7 +28,7 @@
 ## 安装
 
 ```
-$ composer require "wxpay/wxpay:0.0.4" -vvv
+$ composer require "wxpay/wxpay:0.0.5" -vvv
 ```
 php必须启用curl，并在php.ini中配置`curl.cainfo`的值`rootca.pem`的绝对路径。
 
