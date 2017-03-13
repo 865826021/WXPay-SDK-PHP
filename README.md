@@ -33,7 +33,36 @@ $ composer require "wxpay/wxpay:0.0.4" -vvv
 php必须启用curl，并在php.ini中配置`curl.cainfo`的值`rootca.pem`的绝对路径。
 
 ## 示例
-查询订单（使用MD5做签名）：
+
+接口的使用方法是一致的，例如统一下单：
+
+```php
+require __DIR__.'/vendor/autoload.php';
+use WXPay\WXPay;
+use WXPay\WXPayConstants;
+use WXPay\WXPayUtil;
+
+$wxpay = new WXPay(
+        'wx888888888',  // appid
+        '22222222',     // mch id
+        '123456781234567812345678',  // key
+        '/path/to/apiclient_cert.pem',
+        '/path/to/apiclient_key.pem',
+        6000);  // 超时时间，毫秒
+$resp = $wxpay->orderQuery(array(
+                  'out_trade_no' => '201610265257070987061763',
+                  'total_fee' => 1,
+                  'body' => '腾讯充值中心-QQ会员充值',
+                  'spbill_create_ip' => '123.12.12.123',
+                  'trade_type' => 'NATIVE',
+                  'notify_url' => 'https://www.example.com/wxpay/notify'
+              ));
+var_dump($resp);
+```
+
+
+### 关于签名
+默认使用MD5签名。查询订单示例：
 ```php
 require __DIR__.'/vendor/autoload.php';
 use WXPay\WXPay;
@@ -51,7 +80,7 @@ $resp = $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763'));
 var_dump($resp);
 ```
 
-查询订单（使用HMAC-SHA256做签名）：
+使用HMAC-SHA256做签名查询订单：
 ```php
 $wxpay = new WXPay(
         'wx888888888',  // appid
@@ -65,7 +94,8 @@ $resp = $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763'));
 var_dump($resp);
 ```
 
-查询订单（沙箱环境，使用MD5做签名）：
+### 沙箱环境
+查询订单示例：
 ```php
 $useSandbox = true;
 
@@ -82,6 +112,7 @@ $wxpay = new WXPay(
 var_dump( $wxpay->orderQuery(array('out_trade_no' => '201610265257070987061763')) );
 ```
 
+### 其他
 若需要生成请求的XML数据，可以这样：
 ```php
 $data = array(

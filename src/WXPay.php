@@ -2,8 +2,6 @@
 
 namespace WXPay;
 
-use GuzzleHttp\Client as HttpClient;
-
 class WXPay
 {
     /**
@@ -362,7 +360,8 @@ class WXPay
         else {
             $url = WXPayConstants::REPORT_URL;
         }
-        return $this->processResponseXml($this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout));
+        $respXml = $this->requestWithoutCert($url, $this->fillRequestData($reqData), $timeout);
+        return WXPayUtil::xml2array($respXml);
     }
 
     /**
