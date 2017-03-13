@@ -23,7 +23,7 @@ class WXPayConstants
     const REFUND_URL       = 'https://api.mch.weixin.qq.com/secapi/pay/refund';
     const REFUNDQUERY_URL  = 'https://api.mch.weixin.qq.com/pay/refundquery';
     const DOWNLOADBILL_URL = 'https://api.mch.weixin.qq.com/pay/downloadbill';
-    const REPORT_URL       = 'https://api.mch.weixin.qq.com/pay/report';
+    const REPORT_URL       = 'https://api.mch.weixin.qq.com/payitil/report';
     const SHORTURL_URL     = 'https://api.mch.weixin.qq.com/tools/shorturl';
     const AUTHCODETOOPENID_URL = 'https://api.mch.weixin.qq.com/tools/authcodetoopenid';
 
@@ -36,7 +36,7 @@ class WXPayConstants
     const SANDBOX_REFUND_URL       = "https://api.mch.weixin.qq.com/sandboxnew/secapi/pay/refund";
     const SANDBOX_REFUNDQUERY_URL  = "https://api.mch.weixin.qq.com/sandboxnew/pay/refundquery";
     const SANDBOX_DOWNLOADBILL_URL = "https://api.mch.weixin.qq.com/sandboxnew/pay/downloadbill";
-    const SANDBOX_REPORT_URL       = "https://api.mch.weixin.qq.com/sandboxnew/pay/report";
+    const SANDBOX_REPORT_URL       = "https://api.mch.weixin.qq.com/sandboxnew/payitil/report";
     const SANDBOX_SHORTURL_URL     = "https://api.mch.weixin.qq.com/sandboxnew/tools/shorturl";
     const SANDBOX_AUTHCODETOOPENID_URL = "https://api.mch.weixin.qq.com/sandboxnew/tools/authcodetoopenid";
 }
